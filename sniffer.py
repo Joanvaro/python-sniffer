@@ -3,6 +3,13 @@
 '''
 Follow the next tutorial 
 https://www.pythonguis.com/tutorials/pyqt-actions-toolbars-menus/
+
+
+For error install sudo apt-get install libxcb-xinerama0
+
+Icons:
+    The icons can be downloaded in the following link
+    https://p.yusukekamiyamane.com/
 '''
 
 import sys
@@ -34,10 +41,24 @@ class MainWindow(QMainWindow):
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
 
-        button_action = QAction("Save", self)
-        button_action.setStatusTip("Save information to a file")
-        button_action.triggered.connect(self.onMyToolBarButtonClick)
-        toolbar.addAction(button_action)
+        start_button = QAction(QIcon("icons/arrow.png"), "Start", self)
+        start_button.setStatusTip("Start sniffer execution")
+        start_button.triggered.connect(self.onMyToolBarButtonClick)
+        toolbar.addAction(start_button)
+
+        toolbar.addSeparator()
+
+        stop_button = QAction(QIcon("icons/cross.png"), "Start", self)
+        stop_button.setStatusTip("Stop sniffer execution")
+        stop_button.triggered.connect(self.onMyToolBarButtonClick)
+        toolbar.addAction(stop_button)
+
+        toolbar.addSeparator()
+
+        save_button = QAction(QIcon("icons/disk.png"), "Save", self)
+        save_button.setStatusTip("Save information to a file")
+        save_button.triggered.connect(self.onMyToolBarButtonClick)
+        toolbar.addAction(save_button)
 
     def onMyToolBarButtonClick(self, s):
         print("click", s)
