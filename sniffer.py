@@ -10,9 +10,15 @@ For error install sudo apt-get install libxcb-xinerama0
 Icons:
     The icons can be downloaded in the following link
     https://p.yusukekamiyamane.com/
+
+Libraries:
+    * PyQt5
+    * Matplotlib
+    * PySerial
 '''
 
 import sys
+import serial
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QMainWindow
@@ -30,6 +36,26 @@ from PyQt5.QtCore import Qt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+
+# For serial output
+from PyQt5.QtCore import pyqtSignal, QThread
+
+class serialThread(QThread):
+
+    msg = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        super(serialThread, self).__init__(parent)
+        self.serial_port = serial.Serial()
+        self.serial_port.baudrate = 115200
+        self.serial_port.port = '/dev/ttyUSB0'
+        self.serial_port.open()
+
+    def run(self):
+        while True:
+            veri = self.serial_port.readline()
+            self.msg.emit(str(veri))
+            print(veri)
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -90,6 +116,9 @@ class MainWindow(QMainWindow):
         self.textBrowser.moveCursor(QTextCursor.Start)
         self.textBrowser.append("Starting ...")
 
+        self.my_serial = serialThread()
+        self.my_serial.msg.connect(self.textBrowser.append)
+        self.my_serial.start()
 
 if __name__ == '__main__':
 
