@@ -13,8 +13,6 @@ Icons:
 '''
 
 import sys
-import matplotlib.pyplot as plt
-import numpy as np
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QMainWindow
@@ -22,9 +20,23 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QToolBar
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QStatusBar
+from PyQt5.QtWidgets import QVBoxLayout
+from PyQt5.QtWidgets import QTextBrowser
+from PyQt5.QtWidgets import QWidget
 
 from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import Qt
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+
+class MplCanvas(FigureCanvasQTAgg):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
 
 class MainWindow(QMainWindow):
 
@@ -33,17 +45,15 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("RCK sniffer")
 
-        label = QLabel("Hello!")
-        label.setAlignment(Qt.AlignCenter)
+        widget = QWidget()
+        layout = QVBoxLayout()
 
-        self.setCentralWidget(label)
-        
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
 
         start_button = QAction(QIcon("icons/arrow.png"), "Start", self)
         start_button.setStatusTip("Start sniffer execution")
-        start_button.triggered.connect(self.onMyToolBarButtonClick)
+        start_button.triggered.connect(self.startExcecution)
         toolbar.addAction(start_button)
 
         toolbar.addSeparator()
@@ -60,8 +70,25 @@ class MainWindow(QMainWindow):
         save_button.triggered.connect(self.onMyToolBarButtonClick)
         toolbar.addAction(save_button)
 
+        # Canvas matplot
+        sc = MplCanvas(self, width=5, height=4, dpi=100)
+        sc.axes.plot([0,1,2,3,4], [10,1,20,3,40]) # TODO make appear when execution starts
+        layout.addWidget(sc)
+
+        # Text browser
+        self.textBrowser = QTextBrowser()
+        self.textBrowser.setStyleSheet('font-size: 15px;')
+        layout.addWidget(self.textBrowser)
+
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+
     def onMyToolBarButtonClick(self, s):
         print("click", s)
+
+    def startExcecution(self):
+        self.textBrowser.moveCursor(QTextCursor.Start)
+        self.textBrowser.append("Starting ...")
 
 
 if __name__ == '__main__':
