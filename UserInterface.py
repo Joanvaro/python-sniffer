@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QTextBrowser
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QPushButton
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QTextCursor
@@ -62,9 +63,16 @@ class MainWindow(QMainWindow):
         layout.addWidget(sc)
 
         # Command Line
-        command_line_expression = QLineEdit("command", self)
-        command_line_expression.setGeometry(80, 80, 150, 40)
-        layout.addWidget(command_line_expression)
+        self.command_line_expression = QLineEdit("command", self)
+        self.command_line_expression.setGeometry(80, 80, 150, 40)
+        layout.addWidget(self.command_line_expression)
+
+        # Send Button
+        send_button = QPushButton("Send", self)
+        send_button.setGeometry(80, 80, 93, 28)
+        send_button.clicked.connect(self.sendToSerial)
+        layout.addWidget(send_button)
+
 
         # Text browser
         self.textBrowser = QTextBrowser()
@@ -84,3 +92,9 @@ class MainWindow(QMainWindow):
         self.my_serial = SerialThread()
         self.my_serial.msg.connect(self.textBrowser.append)
         self.my_serial.start()
+
+    def sendToSerial(self):
+        self.my_serial.writeCommand(self.command_line_expression.text())
+        print(self.command_line_expression.text())
+
+

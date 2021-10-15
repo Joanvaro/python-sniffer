@@ -25,6 +25,9 @@ class SerialThread(QThread):
     def run(self):
         while True:
             veri = self.serial_port.readline()
-            self.msg.emit(str(veri))
-            print(veri)
+            self.msg.emit(str(veri.decode('utf-8')))
+
+    def writeCommand(self, command):
+        tmp = str.encode(command + "\r\n")
+        self.serial_port.write(tmp)
 
