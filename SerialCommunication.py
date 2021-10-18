@@ -7,6 +7,7 @@
 #
 ###################################################
 
+import re
 import serial
 
 from PyQt5.QtCore import pyqtSignal, QThread
@@ -23,9 +24,18 @@ class SerialThread(QThread):
         self.serial_port.open()
 
     def run(self):
+        pattern = 'SnifferDATA\[\d\]:'
+
         while True:
             veri = self.serial_port.readline()
-            self.msg.emit(str(veri.decode('utf-8')))
+
+            x =re.search(pattern.encode(), veri)
+
+            if x != None:
+                #print(veri[x.span()[-1]:].decode('utf-8'))
+                self.msg.emit(str(veri[x.span()[-1]:].decode('utf-8')))
+
+            #self.msg.emit(str(veri.decode('utf-8')))
 
     def writeCommand(self, command):
         tmp = str.encode(command + "\r\n")
