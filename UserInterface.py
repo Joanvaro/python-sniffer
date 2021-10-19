@@ -47,14 +47,14 @@ class MainWindow(QMainWindow):
 
         stop_button = QAction(QIcon("icons/cross.png"), "Start", self)
         stop_button.setStatusTip("Stop sniffer execution")
-        stop_button.triggered.connect(self.onMyToolBarButtonClick)
+        stop_button.triggered.connect(self.stopExecution)
         toolbar.addAction(stop_button)
 
         toolbar.addSeparator()
 
         save_button = QAction(QIcon("icons/disk.png"), "Save", self)
         save_button.setStatusTip("Save information to a file")
-        save_button.triggered.connect(self.onMyToolBarButtonClick)
+        save_button.triggered.connect(self.saveToFile)
         toolbar.addAction(save_button)
 
         # Canvas matplot
@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(sc)
 
         # Command Line
-        self.command_line_expression = QLineEdit("command", self)
+        self.command_line_expression = QLineEdit("sniffer start", self)
         self.command_line_expression.setGeometry(80, 80, 150, 40)
         layout.addWidget(self.command_line_expression)
 
@@ -92,6 +92,14 @@ class MainWindow(QMainWindow):
         self.my_serial = SerialThread()
         self.my_serial.msg.connect(self.textBrowser.append)
         self.my_serial.start()
+
+    def stopExecution(self):
+        self.my_serial.writeCommand("sniffer stop")
+
+    def saveToFile(self):
+        sniffer_file = open("output.txt", "w")
+        sniffer_file.write(self.my_serial.sniffer_buffer)
+        sniffer_file.close
 
     def sendToSerial(self):
         self.my_serial.writeCommand(self.command_line_expression.text())

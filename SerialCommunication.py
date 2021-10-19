@@ -22,20 +22,24 @@ class SerialThread(QThread):
         self.serial_port.baudrate = 115200
         self.serial_port.port = '/dev/ttyUSB0'
         self.serial_port.open()
+        self.sniffer_buffer = ""
 
     def run(self):
         pattern = 'SnifferDATA\[\d\]:'
 
         while True:
-            veri = self.serial_port.readline()
+            serial_line = self.serial_port.readline()
+            match = re.search(pattern.encode(), serial_line)
 
-            x =re.search(pattern.encode(), veri)
+            if match != None:
+                sniffer_message = serial_line[match.span()[-1]:].decode('utf-8')
+                self.sniffer_buffer += sniffer_message
 
-            if x != None:
-                #print(veri[x.span()[-1]:].decode('utf-8'))
-                self.msg.emit(str(veri[x.span()[-1]:].decode('utf-8')))
+                # Sending sniffer data to GUI
+                self.msg.emit(sniffer_message)
 
-            #self.msg.emit(str(veri.decode('utf-8')))
+            # for debugging purposes
+            print(serial_line.decode('utf-8'))
 
     def writeCommand(self, command):
         tmp = str.encode(command + "\r\n")
