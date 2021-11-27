@@ -14,6 +14,12 @@ SNIFFER_EVENT_MSGLOST_NOSPACEINBUFFER = 0x00
 SNIFFER_EVENT_MSGLOST_INCOMPLETERX = 0x01
 SNIFFER_EVENT_MSGLOST_WUPWITHOUTDATADISCARDED = 0x10
 
+# BLE UUID's for service and characteristics
+UUID_SNIFFER_SERVICE = "00002ad0-0000-1000-8000-00805f9b34fb"
+UUID_CHAR_SNIFFER_DATA = "00002adf-0000-1000-8000-00805f9b34fb" 
+UUID_CHAR_SNIFFER_REMOTE = "00002ae0-0000-1000-8000-00805f9b34fb" 
+
+
 def sniffer_rxframe_data_processing(length, data):
     if length != len(data):
         print("Error: Incomplete data frame")
@@ -37,7 +43,6 @@ def notification_handler(sender, data):
     sniffer_metadata = data.pop(0)
     frame_type = sniffer_metadata & SNIFFER_FRAMETYPE_MASK
     frame_length_or_event = (sniffer_metadata & SNIFFER_DATA_MASK) >> 2
-    #print(f"[TMPDBG] type = {frame_type}, length = {frame_length_or_event}")
 
     if frame_type == SNIFFER_BUFFERFRAME_RXFRAME:
         sniffer_rxframe_data_processing(frame_length_or_event, data)
@@ -61,14 +66,12 @@ async def main():
     
     async with BleakClient(ble_address) as client:
         print(f"Connected to {devices[dev].name}: {client.is_connected}")
-        char_uuid = "00002adf-0000-1000-8000-00805f9b34fb" 
-        sniffer_service = "00002ad0-0000-1000-8000-00805f9b34fb"
         
         services = await client.get_services()
         for s in services:
-            if s.uuid == sniffer_service: 
+            if s.uuid == UUID_SNIFFER_SERVICE: 
                 for x in s.characteristics:
-                   if x.uuid == char_uuid:
+                   if x.uuid == UUID_CHAR_SNIFFER_DATA:
                         char = x
 
         try:
