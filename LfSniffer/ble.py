@@ -62,20 +62,25 @@ async def main():
     async with BleakClient(ble_address) as client:
         print(f"Connected to {devices[dev].name}: {client.is_connected}")
         char_uuid = "00002adf-0000-1000-8000-00805f9b34fb" 
-        '''
+        sniffer_service = "00002ad0-0000-1000-8000-00805f9b34fb"
+        
         services = await client.get_services()
-
         for s in services:
-            print(s)
-            for x in s.characteristics:
-                print(x.uuid)
-        '''
+            if s.uuid == sniffer_service: 
+                for x in s.characteristics:
+                   if x.uuid == char_uuid:
+                        char = x
 
-        await client.start_notify(char_uuid, notification_handler)
+        try:
+            print("\nPress Ctrl-C to stop the sniffer execution\n")
+            await client.start_notify(char, notification_handler)
 
-        while True:
-            await asyncio.sleep(5.0)
+            while True:
+                await asyncio.sleep(5.0)
 
-        await client.stop_notify(char_uuid)
+        except KeyboardInterrupt:
+            print("Stop execution...")
+            await client.stop_notify(char_uuid)
+            pass
 
 asyncio.run(main())
