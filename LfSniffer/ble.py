@@ -1,7 +1,11 @@
 #! /usr/bin/python3
 
 import asyncio
+import queue
+import threading
+
 from bleak import BleakScanner, BleakClient
+from pynput import keyboard
 
 # Definition of constants
 SNIFFER_FRAMETYPE_MASK = 0x03
@@ -19,6 +23,10 @@ UUID_SNIFFER_SERVICE = "00002ad0-0000-1000-8000-00805f9b34fb"
 UUID_CHAR_SNIFFER_DATA = "00002adf-0000-1000-8000-00805f9b34fb" 
 UUID_CHAR_SNIFFER_REMOTE = "00002ae0-0000-1000-8000-00805f9b34fb" 
 
+# Sniffer commands
+START_SIM = bytearray([0x73, 0x6e, 0x69, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x61, 0x72, 0x74, 0x73, 0x69, 0x6d, 0x00])
+SNIFFER_START = bytearray([0x73, 0x6e, 0x69, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x61, 0x72, 0x74, 0x00])
+SNIFFER_STOP = bytearray([0x73, 0x6e, 0x69, 0x66, 0x66, 0x65, 0x72, 0x20, 0x73, 0x74, 0x6f, 0x70, 0x00])
 
 def sniffer_rxframe_data_processing(length, data):
     if length != len(data):
@@ -26,7 +34,7 @@ def sniffer_rxframe_data_processing(length, data):
 
     print("LfFrame: ", end="")
     for value in data:
-        print(f"{value} ", end="")
+        print(f"{hex(value)} ", end="")
     print("")
 
 def sniffer_event_processing(event):
@@ -51,6 +59,23 @@ def notification_handler(sender, data):
     else:
         print("Error: Invalid frame type")
 
+def read_keyboard_input(input_queue):
+    print("\nPress Enter to stop the sniffer execution\n")
+
+    while True:
+        input_str = input()
+        input_queue.put(input_str)
+
+def get_sniffer_mode():
+    print("\nThe following sniffer modes can be performed:")
+    print("\t0. sniffer start.")
+    print("\t1. sniffer startsim.")
+    print("\t2. exit.")
+    print("Select one: ", end="")
+    mode = input()
+    return mode
+
+        
 async def main():
     print("Scanning ble devices")
     devices = await BleakScanner.discover()
@@ -66,7 +91,6 @@ async def main():
     
     async with BleakClient(ble_address) as client:
         print(f"Connected to {devices[dev].name}: {client.is_connected}")
-        
         services = await client.get_services()
         for s in services:
             if s.uuid == UUID_SNIFFER_SERVICE: 
@@ -74,16 +98,42 @@ async def main():
                    if x.uuid == UUID_CHAR_SNIFFER_DATA:
                         char = x
 
-        try:
-            print("\nPress Ctrl-C to stop the sniffer execution\n")
-            await client.start_notify(char, notification_handler)
+        while True:
+            mode = int(get_sniffer_mode())
 
-            while True:
-                await asyncio.sleep(5.0)
+            if mode == 0:
+                command = SNIFFER_START
+            elif mode == 1:
+                command = START_SIM
+            elif mode == 2:
+                break
+            else:
+                print("Error: Invalid sniffer mode! please try again.")
+                continue
+            break
+            
+        res = await client.write_gatt_char(UUID_CHAR_SNIFFER_REMOTE, command, True)
+        await client.start_notify(char, notification_handler)
 
-        except KeyboardInterrupt:
-            print("Stop execution...")
-            await client.stop_notify(char_uuid)
-            pass
+        # Stopping the execution
+        input_queue = queue.Queue()
+        
+        input_thread = threading.Thread(target=read_keyboard_input, 
+                args=(input_queue,),
+                daemon=True)
+        input_thread.start()
+
+        while True:
+            if (input_queue.qsize() > 0):
+                input_str = input_queue.get()
+                
+                if (input_str == ""):
+                    res = await client.write_gatt_char(UUID_CHAR_SNIFFER_REMOTE, SNIFFER_STOP, True)
+                    print("Stopping execution...")
+                    break
+
+            await asyncio.sleep(2.0)
+
+        await client.stop_notify(char)
 
 asyncio.run(main())
